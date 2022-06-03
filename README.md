@@ -1,2 +1,4 @@
-# trajectory-optimization
-Trajectory Optimization
+# Trajectory Optimization
+
+Collections of trajectory optimization examples
+

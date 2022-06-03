@@ -1,0 +1,7 @@
+Manifest.toml
+**/target
+.devenv
+.direnv
+.vscode
+Cargo.lock
+*.svg
