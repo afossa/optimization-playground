@@ -3,12 +3,9 @@ Single Stage to Orbit (SSTO) Trajectory.
 """
 
 import dymos as dm
-import matplotlib as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import openmdao.api as om
-
-mp.use('Qt5Agg')
 
 
 class ODE(om.ExplicitComponent):
@@ -134,7 +131,7 @@ pbm.set_val('traj.phase0.controls:alpha', phase.interp('alpha', [np.pi / 3.0, 0.
 dm.run_problem(pbm, simulate=True, solution_record_file=None, simulation_record_file=None)
 
 tv = tc * pbm.get_val('traj.phase0.timeseries.time')
-mv = pbm.get_val('traj.phase0.timeseries.states:m')
+mv = pbm.get_val('traj.phases.phase0.timeseries.m')
 print(f"\nTime of Flight: {tv[-1, -1]:.3f} s")
 print(f"Final Mass:     {mv[-1, -1]:.3f} kg")
 
@@ -146,13 +143,13 @@ _, ax = plt.subplots(nrows=2, ncols=2, constrained_layout=True)
 plt.suptitle('State Variables Timeseries')
 
 ax[0, 0].plot(tv,
-              rm / 1e3 * pbm.get_val('traj.phase0.timeseries.states:r'),
+              rm / 1e3 * pbm.get_val('traj.phase0.timeseries.r'),
               marker='o',
               ms=4,
               linestyle='None',
               label='solution')
 ax[0, 0].plot(tc * exp_out.get_val('traj.phase0.timeseries.time'),
-              rm / 1e3 * exp_out.get_val('traj.phase0.timeseries.states:r'),
+              rm / 1e3 * exp_out.get_val('traj.phase0.timeseries.r'),
               marker=None,
               linestyle='-',
               label='simulation')
@@ -161,13 +158,13 @@ ax[0, 0].set_xlabel(r'$t$ [s]')
 ax[0, 0].set_ylabel(r'$r$ [km]')
 
 ax[0, 1].plot(tv,
-              180.0 / np.pi * pbm.get_val('traj.phase0.timeseries.states:theta'),
+              180.0 / np.pi * pbm.get_val('traj.phase0.timeseries.theta'),
               marker='o',
               ms=4,
               linestyle='None',
               label='solution')
 ax[0, 1].plot(tc * exp_out.get_val('traj.phase0.timeseries.time'),
-              180.0 / np.pi * exp_out.get_val('traj.phase0.timeseries.states:theta'),
+              180.0 / np.pi * exp_out.get_val('traj.phase0.timeseries.theta'),
               marker=None,
               linestyle='-',
               label='simulation')
@@ -176,13 +173,13 @@ ax[0, 1].set_xlabel(r'$t$ [s]')
 ax[0, 1].set_ylabel(r'$\theta$ [deg]')
 
 ax[1, 0].plot(tv,
-              vc / 1e3 * pbm.get_val('traj.phase0.timeseries.states:u'),
+              vc / 1e3 * pbm.get_val('traj.phase0.timeseries.u'),
               marker='o',
               ms=4,
               linestyle='None',
               label='solution')
 ax[1, 0].plot(tc * exp_out.get_val('traj.phase0.timeseries.time'),
-              vc / 1e3 * exp_out.get_val('traj.phase0.timeseries.states:u'),
+              vc / 1e3 * exp_out.get_val('traj.phase0.timeseries.u'),
               marker=None,
               linestyle='-',
               label='simulation')
@@ -191,13 +188,13 @@ ax[1, 0].set_xlabel(r'$t$ [s]')
 ax[1, 0].set_ylabel(r'$u$ [km/s]')
 
 ax[1, 1].plot(tv,
-              vc / 1e3 * pbm.get_val('traj.phase0.timeseries.states:v'),
+              vc / 1e3 * pbm.get_val('traj.phase0.timeseries.v'),
               marker='o',
               ms=4,
               linestyle='None',
               label='solution')
 ax[1, 1].plot(tc * exp_out.get_val('traj.phase0.timeseries.time'),
-              vc / 1e3 * exp_out.get_val('traj.phase0.timeseries.states:v'),
+              vc / 1e3 * exp_out.get_val('traj.phase0.timeseries.v'),
               marker=None,
               linestyle='-',
               label='simulation')
@@ -209,7 +206,7 @@ ax[1, 1].set_ylabel(r'$v$ [km/s]')
 _, ax = plt.subplots(1, 1, constrained_layout=True)
 plt.suptitle('Control Variables Timeseries')
 ax.plot(tv,
-        180.0 / np.pi * pbm.get_val('traj.phase0.timeseries.controls:alpha'),
+        180.0 / np.pi * pbm.get_val('traj.phase0.timeseries.alpha'),
         color='tab:red',
         marker='o',
         ms=4,

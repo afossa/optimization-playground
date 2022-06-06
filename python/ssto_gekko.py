@@ -2,12 +2,10 @@
 Constant-Thrust Lunar Ascent Trajectory
 """
 
-import matplotlib as mp
 import numpy as np
 import matplotlib.pyplot as plt
 from gekko import GEKKO
 
-mp.use('Qt5Agg')
 m = GEKKO()
 
 # options
