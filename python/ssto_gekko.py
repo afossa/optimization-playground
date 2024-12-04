@@ -16,7 +16,7 @@ m.options.MV_TYPE = 0
 m.options.SOLVER = 3
 m.options.SCALING = 1
 
-m.solver_options = ['max_iter 1000']
+m.solver_options = ["max_iter 1000"]
 
 # physical constants
 mu = 4.9028e12  # Moon standard gravitational parameter [m**3/s**2]
@@ -90,30 +90,35 @@ print(f"Final Mass:     {mass.VALUE[-1]:.3f} s")
 # %% plot
 _, ax = plt.subplots(nrows=2, ncols=2, constrained_layout=True)
 
-ax[0, 0].plot(tc * tof.VALUE * tv, Rm / 1e3 * np.asarray(r.value), marker='o')
+ax[0, 0].plot(tc * tof.VALUE * tv, Rm / 1e3 * np.asarray(r.value), marker="o")
 ax[0, 0].grid(True)
-ax[0, 0].set_xlabel(r'$t$ [s]')
-ax[0, 0].set_ylabel(r'$r$ [km]')
+ax[0, 0].set_xlabel(r"$t$ [s]")
+ax[0, 0].set_ylabel(r"$r$ [km]")
 
-ax[0, 1].plot(tc * tof.VALUE * tv, 180.0 / np.pi * np.asarray(theta.value), marker='o')
+ax[0, 1].plot(tc * tof.VALUE * tv, 180.0 / np.pi * np.asarray(theta.value), marker="o")
 ax[0, 1].grid(True)
-ax[0, 1].set_xlabel(r'$t$ [s]')
-ax[0, 1].set_ylabel(r'$\theta$ [deg]')
+ax[0, 1].set_xlabel(r"$t$ [s]")
+ax[0, 1].set_ylabel(r"$\theta$ [deg]")
 
-ax[1, 0].plot(tc * tof.VALUE * tv, vc / 1e3 * np.asarray(u.value), marker='o')
+ax[1, 0].plot(tc * tof.VALUE * tv, vc / 1e3 * np.asarray(u.value), marker="o")
 ax[1, 0].grid(True)
-ax[1, 0].set_xlabel(r'$t$ [s]')
-ax[1, 0].set_ylabel(r'$u$ [km/s]')
+ax[1, 0].set_xlabel(r"$t$ [s]")
+ax[1, 0].set_ylabel(r"$u$ [km/s]")
 
-ax[1, 1].plot(tc * tof.VALUE * tv, vc / 1e3 * np.asarray(v.value), marker='o')
+ax[1, 1].plot(tc * tof.VALUE * tv, vc / 1e3 * np.asarray(v.value), marker="o")
 ax[1, 1].grid(True)
-ax[1, 1].set_xlabel(r'$t$ [s]')
-ax[1, 1].set_ylabel(r'$v$ [km/s]')
+ax[1, 1].set_xlabel(r"$t$ [s]")
+ax[1, 1].set_ylabel(r"$v$ [km/s]")
 
 _, ax = plt.subplots(1, 1, constrained_layout=True)
-ax.plot(tc * tof.VALUE * tv, 180.0 / np.pi * np.asarray(alpha.value), color='tab:red', marker='o')
+ax.plot(
+    tc * tof.VALUE * tv,
+    180.0 / np.pi * np.asarray(alpha.value),
+    color="tab:red",
+    marker="o",
+)
 ax.grid(True)
-ax.set_xlabel(r'$t$ [s]')
-ax.set_ylabel(r'$\alpha$ [deg]')
+ax.set_xlabel(r"$t$ [s]")
+ax.set_ylabel(r"$\alpha$ [deg]")
 
 plt.show()
