@@ -9,12 +9,11 @@ from gekko import GEKKO
 m = GEKKO()
 
 # options
-m.options.IMODE = 6
-m.options.NODES = 3
-m.options.SOLVER = 3
-m.options.MV_TYPE = 0
-m.options.SOLVER = 3
-m.options.SCALING = 1
+m.options.IMODE = 6  # dynamic simultaneous control mode
+m.options.NODES = 3  # number of collocation nodes per time segment
+m.options.MV_TYPE = 0  # zeroth-order hold control
+m.options.SOLVER = 3  # IPOPT solver
+m.options.SCALING = 1  # automatic scaling
 
 m.solver_options = ["max_iter 1000"]
 
@@ -40,8 +39,8 @@ tv = np.linspace(0.0, 1.0, nt)
 m.time = tv
 
 # scale time
-tof = m.FV(0.5, lb=0.25, ub=0.75)
-tof.STATUS = 1
+tof = m.FV(0.5, lb=0.25, ub=0.75)  # fixed (i.e., scalar) variable
+tof.STATUS = 1  # set as optimization variable
 
 # constants
 mdot = -twr / (Isp * g0 / vc)
@@ -49,21 +48,17 @@ thr = m.Const(twr)
 
 # state variables
 # r, theta, u, v, m = model.Array(model.Var, 5)
-r = m.Var(value=np.linspace(0.0, rf, nt), lb=1.0)
+r = m.Var(value=np.linspace(1.0, rf, nt), lb=1.0)
 theta = m.Var(value=np.linspace(0.0, np.pi / 18.0, nt), lb=0.0)
-u = m.Var(value=np.linspace(0.0, 0.0, nt), lb=0.0)
-v = m.Var(value=np.linspace(0.0, vf, nt), lb=0.0)
-mass = m.Var(value=np.linspace(1.0, 0.7, nt), lb=0.0, ub=1.0)
+u = m.Var(value=np.linspace(0.0, 0.0, nt))
+v = m.Var(value=np.linspace(0.0, vf, nt))
+mass = m.Var(value=np.linspace(1.0, 0.7, nt), lb=0.0)
 
 # control variables
 alpha = m.MV(value=np.linspace(np.pi / 3.0, -np.pi / 6.0, nt), lb=-np.pi / 2.0)
-alpha.STATUS = 1
+alpha.STATUS = 1  # set as optimization variable
 # alpha.DCOST = 0.01
 # alpha.DMAX = 0.5
-
-p = np.zeros(nt)
-p[-1] = 1.0
-final = m.Param(value=p)
 
 # Equations of Motion
 m.Equation(r.dt() == tof * u)
@@ -78,14 +73,18 @@ m.fix_final(r, rf)
 m.fix_final(v, vf)
 
 # objective
+p = np.zeros(nt)
+p[-1] = 1.0
+final = m.Param(value=p)
+
 # m.Minimize(-mass * final)
 m.Minimize(tof * final)
 
 # solve problem
 m.solve()
 
-print(f"\nTime of Flight: {tof.VALUE[-1]:.3f} s")
-print(f"Final Mass:     {mass.VALUE[-1]:.3f} s")
+print(f"\nTime of Flight: {tc * tof.VALUE[-1]:.3f} s")
+print(f"Final Mass:     {mass.VALUE[-1]:.3f} kg")
 
 # %% plot
 _, ax = plt.subplots(nrows=2, ncols=2, constrained_layout=True)
