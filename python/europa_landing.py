@@ -10,8 +10,6 @@ import dymos as dm
 import matplotlib as mp
 import matplotlib.pyplot as plt
 
-mp.use('Qt5Agg')
-
 
 # %% Dymos Ordinary Differential Equations (ODEs)
 
@@ -321,7 +319,7 @@ class NumpyEncoder(json.JSONEncoder):
 # NLP settings
 nb_seg = 300
 order = 3
-opti = 'SNOPT'
+opti = 'IPOPT'
 
 # physical parameters
 MU = 3188.82e9  # Europa's standard gravitational parameter [m^3/s^2]
@@ -504,8 +502,8 @@ pbm.set_val('traj.phase0.controls:thrust', np.take(cgt[:, 1], cnt))
 pbm.run_model()
 dm.run_problem(pbm, simulate=False, solution_record_file=None, simulation_record_file=None)
 
-print(f"Initial mass: {pbm.get_val('traj.phase0.timeseries.states:m')[0, 0] * mc} kg")
-print(f"Final mass:   {pbm.get_val('traj.phase0.timeseries.states:m')[-1, 0] * mc} kg")
+print(f"Initial mass: {pbm.get_val('traj.phase0.timeseries.m')[0, 0] * mc} kg")
+print(f"Final mass:   {pbm.get_val('traj.phase0.timeseries.m')[-1, 0] * mc} kg")
 
 # %% Explicit integration
 
@@ -516,11 +514,11 @@ exp = traj.simulate(record_file=None)
 tvi, idx = np.unique(pbm.get_val('traj.phase0.timeseries.time'), return_index=True)
 tvi = tc * tvi
 svi = np.empty((tvi.size, 5))
-svi[:, 0] = lc * 1e-3 * np.take(pbm.get_val('traj.phase0.timeseries.states:r'), idx)
-svi[:, 1] = 180.0 / np.pi * np.take(pbm.get_val('traj.phase0.timeseries.states:theta'), idx)
-svi[:, 2] = vc * 1e-3 * np.take(pbm.get_val('traj.phase0.timeseries.states:u'), idx)
-svi[:, 3] = vc * 1e-3 * np.take(pbm.get_val('traj.phase0.timeseries.states:v'), idx)
-svi[:, 4] = mc * np.take(pbm.get_val('traj.phase0.timeseries.states:m'), idx)
+svi[:, 0] = lc * 1e-3 * np.take(pbm.get_val('traj.phase0.timeseries.r'), idx)
+svi[:, 1] = 180.0 / np.pi * np.take(pbm.get_val('traj.phase0.timeseries.theta'), idx)
+svi[:, 2] = vc * 1e-3 * np.take(pbm.get_val('traj.phase0.timeseries.u'), idx)
+svi[:, 3] = vc * 1e-3 * np.take(pbm.get_val('traj.phase0.timeseries.v'), idx)
+svi[:, 4] = mc * np.take(pbm.get_val('traj.phase0.timeseries.m'), idx)
 
 out = {
     'europa': {'mu': MU * 1e-9, 'mean_radius': RE * 1e-3},
@@ -548,28 +546,28 @@ _, ax = plt.subplots(nrows=2, ncols=2, constrained_layout=True)
 plt.suptitle('State Variables Timeseries')
 
 ax[0, 0].plot(tvi, svi[:, 0], marker='o', ms=4, linestyle='None')
-ax[0, 0].plot(tve, lc * 1e-3 * exp.get_val('traj.phase0.timeseries.states:r'),
+ax[0, 0].plot(tve, lc * 1e-3 * exp.get_val('traj.phase0.timeseries.r'),
               marker=None, linestyle='-')
 ax[0, 0].grid(True)
 ax[0, 0].set_xlabel(r'$t$ [s]')
 ax[0, 0].set_ylabel(r'$r$ [km]')
 
 ax[0, 1].plot(tvi, svi[:, 1], marker='o', ms=4, linestyle='-')
-ax[0, 1].plot(tve, 180.0 / np.pi * exp.get_val('traj.phase0.timeseries.states:theta'),
+ax[0, 1].plot(tve, 180.0 / np.pi * exp.get_val('traj.phase0.timeseries.theta'),
               marker=None, linestyle='-')
 ax[0, 1].grid(True)
 ax[0, 1].set_xlabel(r'$t$ [s]')
 ax[0, 1].set_ylabel(r'$\theta$ [deg]')
 
 ax[1, 0].plot(tvi, svi[:, 2], marker='o', ms=4, linestyle='-')
-ax[1, 0].plot(tve, vc * 1e-3 * exp.get_val('traj.phase0.timeseries.states:u'),
+ax[1, 0].plot(tve, vc * 1e-3 * exp.get_val('traj.phase0.timeseries.u'),
               marker=None, linestyle='-')
 ax[1, 0].grid(True)
 ax[1, 0].set_xlabel(r'$t$ [s]')
 ax[1, 0].set_ylabel(r'$u$ [km/s]')
 
 ax[1, 1].plot(tvi, svi[:, 3], marker='o', ms=4, linestyle='-')
-ax[1, 1].plot(tve, vc * 1e-3 * exp.get_val('traj.phase0.timeseries.states:v'),
+ax[1, 1].plot(tve, vc * 1e-3 * exp.get_val('traj.phase0.timeseries.v'),
               marker=None, linestyle='-')
 ax[1, 1].grid(True)
 ax[1, 1].set_xlabel(r'$t$ [s]')
@@ -586,13 +584,13 @@ ax.set_ylabel(r'$m$ [kg]')
 _, ax = plt.subplots(2, 1, constrained_layout=True)
 plt.suptitle('Control Variables Timeseries')
 
-ax[0].plot(tvi, 180.0 / np.pi * np.take(pbm.get_val('traj.phase0.timeseries.controls:alpha'), idx),
+ax[0].plot(tvi, 180.0 / np.pi * np.take(pbm.get_val('traj.phase0.timeseries.alpha'), idx),
            color='tab:red', marker='o', ms=4, linestyle='-')
 ax[0].grid(True)
 ax[0].set_xlabel(r'$t$ [s]')
 ax[0].set_ylabel(r'$\alpha$ [deg]')
 
-ax[1].plot(tvi, mc * ac * np.take(pbm.get_val('traj.phase0.timeseries.controls:thrust'), idx),
+ax[1].plot(tvi, mc * ac * np.take(pbm.get_val('traj.phase0.timeseries.thrust'), idx),
            color='tab:red', marker='o', ms=4, linestyle='-')
 ax[1].grid(True)
 ax[1].set_xlabel(r'$t$ [s]')
