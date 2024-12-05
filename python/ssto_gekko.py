@@ -48,14 +48,18 @@ thr = m.Const(twr)
 
 # state variables
 # r, theta, u, v, m = model.Array(model.Var, 5)
-r = m.Var(value=np.linspace(1.0, rf, nt), lb=1.0)
-theta = m.Var(value=np.linspace(0.0, np.pi / 18.0, nt), lb=0.0)
-u = m.Var(value=np.linspace(0.0, 0.0, nt))
-v = m.Var(value=np.linspace(0.0, vf, nt))
-mass = m.Var(value=np.linspace(1.0, 0.7, nt), lb=0.0)
+r = m.SV(value=np.linspace(1.0, rf, nt), lb=1.0)
+theta = m.SV(value=np.linspace(0.0, np.pi / 18.0, nt), lb=0.0)
+u = m.SV(value=np.linspace(0.0, 0.0, nt))
+v = m.SV(value=np.linspace(0.0, vf, nt))
+mass = m.SV(value=np.linspace(1.0, 0.7, nt), lb=0.0)
 
 # control variables
-alpha = m.MV(value=np.linspace(np.pi / 3.0, -np.pi / 6.0, nt), lb=-np.pi / 2.0)
+alpha = m.MV(
+    value=np.linspace(np.pi / 3.0, -np.pi / 6.0, nt),
+    lb=-np.pi / 2.0,
+    ub=np.pi / 2.0,
+)
 alpha.STATUS = 1  # set as optimization variable
 # alpha.DCOST = 0.01
 # alpha.DMAX = 0.5
@@ -63,7 +67,9 @@ alpha.STATUS = 1  # set as optimization variable
 # Equations of Motion
 m.Equation(r.dt() == tof * u)
 m.Equation(theta.dt() == tof * (v / r))
-m.Equation(u.dt() == tof * (-1.0 / (r * r) + (v * v) / r + twr / mass * m.sin(alpha)))
+m.Equation(
+    u.dt() == tof * (-1.0 / (r * r) + (v * v) / r + twr / mass * m.sin(alpha))
+)
 m.Equation(v.dt() == tof * (-(u * v) / r + twr / mass * m.cos(alpha)))
 m.Equation(mass.dt() == tof * mdot)
 
@@ -88,35 +94,49 @@ print(f"Final Mass:     {mass.VALUE[-1]:.3f} kg")
 
 # %% plot
 _, ax = plt.subplots(nrows=2, ncols=2, constrained_layout=True)
+td = tc * tof.VALUE * tv
 
-ax[0, 0].plot(tc * tof.VALUE * tv, Rm / 1e3 * np.asarray(r.value), marker="o")
+ax[0, 0].plot(
+    td, Rm / 1e3 * np.asarray(r.value), marker="o", linewidth=2, color="blue"
+)
 ax[0, 0].grid(True)
 ax[0, 0].set_xlabel(r"$t$ [s]")
 ax[0, 0].set_ylabel(r"$r$ [km]")
 
-ax[0, 1].plot(tc * tof.VALUE * tv, 180.0 / np.pi * np.asarray(theta.value), marker="o")
+ax[0, 1].plot(
+    td,
+    180.0 / np.pi * np.asarray(theta.value),
+    marker="o",
+    linewidth=2,
+    color="blue",
+)
 ax[0, 1].grid(True)
 ax[0, 1].set_xlabel(r"$t$ [s]")
 ax[0, 1].set_ylabel(r"$\theta$ [deg]")
 
-ax[1, 0].plot(tc * tof.VALUE * tv, vc / 1e3 * np.asarray(u.value), marker="o")
+ax[1, 0].plot(
+    td, vc / 1e3 * np.asarray(u.value), marker="o", linewidth=2, color="blue"
+)
 ax[1, 0].grid(True)
 ax[1, 0].set_xlabel(r"$t$ [s]")
 ax[1, 0].set_ylabel(r"$u$ [km/s]")
 
-ax[1, 1].plot(tc * tof.VALUE * tv, vc / 1e3 * np.asarray(v.value), marker="o")
+ax[1, 1].plot(
+    td, vc / 1e3 * np.asarray(v.value), marker="o", linewidth=2, color="blue"
+)
 ax[1, 1].grid(True)
 ax[1, 1].set_xlabel(r"$t$ [s]")
 ax[1, 1].set_ylabel(r"$v$ [km/s]")
 
 _, ax = plt.subplots(1, 1, constrained_layout=True)
-ax.plot(
-    tc * tof.VALUE * tv,
-    180.0 / np.pi * np.asarray(alpha.value),
-    color="tab:red",
-    marker="o",
-)
 ax.grid(True)
+ax.stairs(
+    180.0 / np.pi * np.asarray(alpha.value)[:-1],
+    td,
+    baseline=None,
+    linewidth=2,
+    color="red",
+)
 ax.set_xlabel(r"$t$ [s]")
 ax.set_ylabel(r"$\alpha$ [deg]")
 
