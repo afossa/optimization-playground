@@ -6,16 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gekko import GEKKO
 
-m = GEKKO()
-
-# options
-m.options.IMODE = 6  # dynamic simultaneous control mode
-m.options.NODES = 3  # number of collocation nodes per time segment
-m.options.MV_TYPE = 0  # zeroth-order hold control
-m.options.SOLVER = 3  # IPOPT solver
-m.options.SCALING = 1  # automatic scaling
-
-m.solver_options = ["max_iter 1000"]
+# number of nodes
+nt = 30
 
 # physical constants
 mu = 4.9028e12  # Moon standard gravitational parameter [m**3/s**2]
@@ -32,22 +24,33 @@ vc = lc / tc
 # scaled quantities
 rf = 1.05  # target orbit radius [-]
 vf = np.sqrt(1.0 / rf)  # target tangential velocity [-]
+dm = -twr / (Isp * g0 / vc) # mass flow rate [-]
 
-# time grid
-nt = 30
+# GEKKO model initialization
+m = GEKKO()
+
+# model options
+m.options.IMODE = 6  # dynamic simultaneous control mode
+m.options.NODES = 3  # number of collocation nodes per time segment
+m.options.MV_TYPE = 0  # zeroth-order hold control
+m.options.SOLVER = 3  # IPOPT solver
+m.options.SCALING = 1  # automatic scaling
+
+# solver options
+m.solver_options = ["max_iter 1000"]
+
+# pseudo-time grid
 tv = np.linspace(0.0, 1.0, nt)
 m.time = tv
 
-# scale time
-tof = m.FV(0.5, lb=0.25, ub=0.75)  # fixed (i.e., scalar) variable
+# time of flight
+tof = m.FV(0.5, lb=0.25, ub=0.75)  # scalar variable
 tof.STATUS = 1  # set as optimization variable
 
 # constants
-mdot = -twr / (Isp * g0 / vc)
 thr = m.Const(twr)
 
 # state variables
-# r, theta, u, v, m = model.Array(model.Var, 5)
 r = m.SV(value=np.linspace(1.0, rf, nt), lb=1.0)
 theta = m.SV(value=np.linspace(0.0, np.pi / 18.0, nt), lb=0.0)
 u = m.SV(value=np.linspace(0.0, 0.0, nt))
@@ -59,19 +62,18 @@ alpha = m.MV(
     value=np.linspace(np.pi / 3.0, -np.pi / 6.0, nt),
     lb=-np.pi / 2.0,
     ub=np.pi / 2.0,
+    fixed_initial=False,
 )
 alpha.STATUS = 1  # set as optimization variable
-# alpha.DCOST = 0.01
-# alpha.DMAX = 0.5
 
-# Equations of Motion
+# equations of motion
 m.Equation(r.dt() == tof * u)
 m.Equation(theta.dt() == tof * (v / r))
 m.Equation(
     u.dt() == tof * (-1.0 / (r * r) + (v * v) / r + twr / mass * m.sin(alpha))
 )
 m.Equation(v.dt() == tof * (-(u * v) / r + twr / mass * m.cos(alpha)))
-m.Equation(mass.dt() == tof * mdot)
+m.Equation(mass.dt() == tof * dm)
 
 # Terminal Constraints
 m.fix_final(r, rf)
