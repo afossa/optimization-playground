@@ -362,7 +362,6 @@ if __name__ == "__main__":
 
         # Solve Lambert's Problem
         v1_3, v2_3, num_sol_3 = lambert_solver(r1_3, r2_3, tof_3, mu_3, 2)
-        print(v1_3)
 
         assert num_sol_3 == 3
         assert np.allclose(v1_3[0, :], [-21.240058935496876, 27.686763544075136, -0.50382285400886622],  rtol=1e-14, atol=1e-14)
