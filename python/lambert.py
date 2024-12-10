@@ -255,10 +255,14 @@ def _find_x_by_householder(tof, xn, λ, m, tol_Δx=1.0e-8, max_iter=15):
             return iter, np.nan
 
         # Eqs.(22) in Ref[1]
-        f = lambda x, t: t - tof
-        df_dx = lambda x, t: (3.0 * t * x - 2.0 + 2.0 * λ**3 * x / np.sqrt(1.0 - λ**2 * (1.0 - x**2))) / (1.0 - x**2)
-        d2f_dx2 = lambda x, t: (3.0 * t + 5.0 * x * df_dx(x, t) + 2.0 * (1.0 - λ**2) * (λ**3) / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**3)) / (1.0 - x**2)
-        d3f_dx3 = lambda x, t: (7.0 * x * d2f_dx2(x, t) + 8.0 * df_dx(x, t) - 6.0 * (1.0 - λ**2) * (λ**5) * x / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**5)) / (1.0 - x**2)
+        def f(x, t):
+            return t - tof
+        def df_dx(x, t):
+            return (3.0 * t * x - 2.0 + 2.0 * λ ** 3 * x / np.sqrt(1.0 - λ ** 2 * (1.0 - x ** 2))) / (1.0 - x ** 2)
+        def d2f_dx2(x, t):
+            return (3.0 * t + 5.0 * x * df_dx(x, t) + 2.0 * (1.0 - λ ** 2) * λ ** 3 / np.sqrt(1.0 - λ ** 2 * (1.0 - x ** 2)) ** 3) / (1.0 - x ** 2)
+        def d3f_dx3(x, t):
+            return (7.0 * x * d2f_dx2(x, t) + 8.0 * df_dx(x, t) - 6.0 * (1.0 - λ ** 2) * λ ** 5 * x / np.sqrt(1.0 - λ ** 2 * (1.0 - x ** 2)) ** 5) / (1.0 - x ** 2)
 
         # Householder's Method
         xn_new = xn - f(xn, tn) * (
@@ -286,9 +290,12 @@ def _find_tof_min_by_halley_method(xn, tn, λ, m_max, tol_Δx=1.0e-13, max_iter=
     iter = 0
     while True:
         # Eqs.(22) in Ref[1]
-        dt_dx = lambda x, t: (3.0 * t * x - 2.0 + 2.0 * λ**3 * x / np.sqrt(1.0 - λ**2 * (1.0 - x**2))) / (1.0 - x**2)
-        d2t_dx2 = lambda x, t: (3.0 * t + 5.0 * x * dt_dx(x, t) + 2.0 * (1.0 - λ**2) * (λ**3) / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**3)) / (1.0 - x**2)
-        d3t_dx3 = lambda x, t: (7.0 * x * d2t_dx2(x, t) + 8.0 * dt_dx(x, t) - 6.0 * (1.0 - λ**2) * (λ**5) * x / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**5)) / (1.0 - x**2)
+        def dt_dx(x, t):
+            return (3.0 * t * x - 2.0 + 2.0 * λ ** 3 * x / np.sqrt(1.0 - λ ** 2 * (1.0 - x ** 2))) / (1.0 - x ** 2)
+        def d2t_dx2(x, t):
+            return (3.0 * t + 5.0 * x * dt_dx(x, t) + 2.0 * (1.0 - λ ** 2) * λ ** 3 / np.sqrt(1.0 - λ ** 2 * (1.0 - x ** 2)) ** 3) / (1.0 - x ** 2)
+        def d3t_dx3(x, t):
+            return (7.0 * x * d2t_dx2(x, t) + 8.0 * dt_dx(x, t) - 6.0 * (1.0 - λ ** 2) * λ ** 5 * x / np.sqrt(1.0 - λ ** 2 * (1.0 - x ** 2)) ** 5) / (1.0 - x ** 2)
 
         # Halley's Method
         xn_new = xn - (2.0 * dt_dx(xn, tn) * d2t_dx2(xn, tn)) / (2.0 * (d2t_dx2(xn, tn)**2) - dt_dx(xn, tn) * d3t_dx3(xn, tn))
