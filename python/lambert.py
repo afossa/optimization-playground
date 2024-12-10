@@ -1,5 +1,5 @@
 """
-Part of this code has been adapted from https://github.com/naoyaozaki/LambertProblem.jl 
+Part of this code has been adapted from https://github.com/naoyaozaki/LambertProblem.jl
 maintained by Naoya Ozaki and released under the MIT License.
 
 MIT License
@@ -25,16 +25,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-export lambert_solver
-
-using LinearAlgebra
+import warnings
+import numpy as np
 
 """
-Solves the Lambert's problem, i.e. computes the initial and final velocity 
-vectors for given initial and final position vectors and time of flight. 
+Solves the Lambert's problem, i.e. computes the initial and final velocity
+vectors for given initial and final position vectors and time of flight.
 See [Battin1999, Izzo2015](@citet).
 
-For `N` maximum number of multiple revolutions, the total number of solutions 
+For `N` maximum number of multiple revolutions, the total number of solutions
 is `2N+1`. The output velocity vectors are organized as follows:
 
 | `v1[1,:]` |  `v1[2,:]`   |   `v1[3,:]`   |  `v1[4,:]`   | --> |
@@ -60,64 +59,60 @@ is `2N+1`. The output velocity vectors are organized as follows:
 - `num_sol`: Number of solutions.
 
 """
-function lambert_solver(r1::AbstractVector{T},r2::AbstractVector{T},tof::U,μ::V,multi_revs::Integer;is_retrograde::Bool=false) where {T<:Real,U<:Real,V<:Real}
+def lambert_solver(r1,r2,tof,μ,multi_revs=0,is_retrograde=False):
 
     # 0. Sanity Check
-    if tof <= 0
-        @error "ERROR: Time of flight must be positive!"
-    end
-    if μ <= 0
-        @error "ERROR: Gravity parameter must be positive!"
-    end
+    if tof <= 0:
+        raise ValueError("Time of flight must be positive!")
+    if μ <= 0:
+        raise ValueError("Gravity parameter must be positive!")
 
     # 1. Preparation
     # Variables used in Lambert's Problem
-    r1_norm = norm(r1)
-    r2_norm = norm(r2)
-    c = norm(r2 - r1)
+    r1_norm = np.linalg.norm(r1)
+    r2_norm = np.linalg.norm(r2)
+    c = np.linalg.norm(r2 - r1)
     s = 0.5 * (r1_norm + r2_norm + c)
     λ2 = 1.0 - c / s
-    tof_nomdim = sqrt(2.0 * μ / (s^3)) * tof
+    tof_nomdim = np.sqrt(2.0 * μ / (s**3)) * tof
 
     # Basis vectors
     ivec_r1 = r1 / r1_norm
     ivec_r2 = r2 / r2_norm
-    ivec_h = cross(ivec_r1, ivec_r2)
-    ivec_h = ivec_h / norm(ivec_h) # Angular momentum vector
+    ivec_h = np.linalg.cross(ivec_r1, ivec_r2)
+    ivec_h = ivec_h / np.linalg.norm(ivec_h) # Angular momentum vector
     # NOTE: ivec_h cannot be defined if r1 // r2
 
-    if ivec_h[3] == 0.0
-        @error "ERROR: The angular momentum vector has no z component, impossible to define automatically clock or counterclockwise!"
-    elseif ivec_h[3] < 0.0
-        λ = -sqrt(λ2)
-        ivec_t1 = -cross(ivec_h, ivec_r1)
-        ivec_t2 = -cross(ivec_h, ivec_r2)
-    else
-        λ = sqrt(λ2)
-        ivec_t1 = cross(ivec_h, ivec_r1)
-        ivec_t2 = cross(ivec_h, ivec_r2)
-    end
+    if ivec_h[3] == 0.0:
+        raise ValueError("The angular momentum vector has no z component, impossible to define automatically clock or counterclockwise!")
+    elif ivec_h[3] < 0.0:
+        λ = -np.sqrt(λ2)
+        ivec_t1 = -np.linalg.cross(ivec_h, ivec_r1)
+        ivec_t2 = -np.linalg.cross(ivec_h, ivec_r2)
+    else:
+        λ = np.sqrt(λ2)
+        ivec_t1 = np.linalg.cross(ivec_h, ivec_r1)
+        ivec_t2 = np.linalg.cross(ivec_h, ivec_r2)
 
-    if is_retrograde # Retrograde Motion
+    if is_retrograde: # Retrograde Motion
         λ = -λ
         ivec_t1 = -ivec_t1
         ivec_t2 = -ivec_t2
-    end
 
     # 2. Calculate x
     _, x_all = _find_xy(λ, tof_nomdim, multi_revs)
 
     # 3. Calculate Terminal Velocities
-    vvec_1_all = zeros(eltype(r1), length(x_all), 3)
-    vvec_2_all = zeros(eltype(r1), length(x_all), 3)
+    vvec_1_all = np.zeros(len(x_all), 3)
+    vvec_2_all = np.zeros(len(x_all), 3)
 
-    γ = sqrt(0.5 * μ * s)
+    γ = np.sqrt(0.5 * μ * s)
     ρ = (r1_norm - r2_norm) / c
-    σ = sqrt(1.0 - ρ^2)
+    σ = np.sqrt(1.0 - ρ**2)
 
-    for (i, x) in enumerate(x_all)
+    for (i, x) in enumerate(x_all):
         # Calculate Velocity Norm
-        y = sqrt(1.0 - λ^2 * (1.0 - x^2))
+        y = np.sqrt(1.0 - λ**2 * (1.0 - x**2))
         v_r1 = γ * ((λ * y - x) - ρ * (λ * y + x)) / r1_norm
         v_r2 = -γ * ((λ * y - x) + ρ * (λ * y + x)) / r2_norm
         v_t1 = γ * σ * (y + λ * x) / r1_norm
@@ -126,260 +121,186 @@ function lambert_solver(r1::AbstractVector{T},r2::AbstractVector{T},tof::U,μ::V
         # Calculate Velocity Vectors
         vvec_1_all[i, :] = (v_r1 * ivec_r1 + v_t1 * ivec_t1)
         vvec_2_all[i, :] = (v_r2 * ivec_r2 + v_t2 * ivec_t2)
-    end
 
     # Output
-    return vvec_1_all, vvec_2_all, length(x_all)
-end
+    return vvec_1_all, vvec_2_all, len(x_all)
 
 
-"""
-Solves the Lambert's probem and samples the orbit state along the resulting arc.
-
-Refer to [lambert_solver](@ref) for more details on how the Lambert's problem is solved.
-
-## Arguments ##
-
-- `x1`: Initial state vector (before the first impulse).
-- `x2`: Final state vector (after the second impulse).
-- `tof`: Time of flight.
-- `μ`: Gravitational parameter.
-- `nb_states`: Number of sampled states.
-
-## Keyword Arguments ##
-
-- `is_retrograde`: Flag to indicate if the motion is retrograde (default to `false`).
-
-## Returns ##
-
-- `x_pri_vec`: Prior states.
-- `x_pst_vec`: Posterior states.
-- `u_vec`: Impulsive maneuvers.
-
-"""
-function lambert_arc(x1::AbstractVector{T},x2::AbstractVector{T},tof::U,μ::V,nb_states::Integer;is_retrograde::Bool=false) where {T<:Real,U<:Real,V<:Real}
-
-    # solve the Lambert problem assuming 0 maximum revolutions (at least for now)
-    sol = lambert_solver(x1[1:3], x2[1:3], tof, μ, 0, is_retrograde=is_retrograde)
-
-    # impulsive maneuvers and initial state along the Lamber arc
-    Δv  = [sol[1]-x1[4:6]'; x2[4:6]'-sol[2]]
-    x0 = [x1[1:3]; sol[1][:]]
-
-    # sample Lambert arc
-    x_vec = vcat([CANoE.lagrange_propagator(x0,μ,t) for t in range(0.0,tof,nb_states)]'...)
-
-    # prior and posterior states
-    x_pri_vec = [x1'; x_vec[2:end,:]]
-    x_pst_vec = [x_vec[1:end-1,:]; x2']
-
-    # impulsive maneuvers (intermediate ones are null)
-    u_vec = [Δv[1:1,:]; zeros(nb_states-2,3); Δv[2:2,:]]
-
-    # check
-    B = [zeros(3,3); I]
-    x_chk_vec = vcat([x_pri_vec[i,:]+B*u_vec[i,:] for i in 1:nb_states]'...)
-    #@assert all(x_chk_vec .≈ x_pst_vec)
-
-    return x_pri_vec, x_pst_vec, u_vec
-end
-
-
-function _x2tof(x, λ, m_max, Δx_battin=0.01, Δx_lagrange=0.2)
+def _x2tof(x, λ, m_max, Δx_battin=0.01, Δx_lagrange=0.2):
     Δx = abs(x - 1.0)
 
-    if (Δx > Δx_battin) && (Δx < Δx_lagrange)
+    if (Δx > Δx_battin) and (Δx < Δx_lagrange):
         # Use Lagrange TOF Expression
-        a = 1.0 / (1.0 - x^2) # Non dimensional semi-major axis
-        if a > 0 # Ellipse
-            α = 2.0 * acos(x)
-            β = 2.0 * asin(λ / sqrt(a))
-            tof = 0.5 * a^(3 / 2) * ((α - sin(α)) - (β - sin(β)) + 2.0 * m_max * π) # Non dimensinal TOF
+        a = 1.0 / (1.0 - x**2) # Non dimensional semi-major axis
+        if a > 0: # Ellipse
+            α = 2.0 * np.acos(x)
+            β = 2.0 * np.asin(λ / np.sqrt(a))
+            tof = 0.5 * a**(3 / 2) * ((α - np.sin(α)) - (β - np.sin(β)) + 2.0 * m_max * np.pi) # Non dimensinal TOF
+        else: # Hyperbola
+            α = 2.0 * np.acosh(x)
+            β = 2.0 * np.asinh(λ / np.sqrt(-a))
+            tof = -0.5 * (-a)**(3 / 2) * ((α - np.sinh(α)) - (β - np.sinh(β))) # Non dimensinal TOF
 
-        else # Hyperbola
-            α = 2.0 * acosh(x)
-            β = 2.0 * asinh(λ / sqrt(-a))
-            tof = -0.5 * (-a)^(3 / 2) * ((α - sinh(α)) - (β - sinh(β))) # Non dimensinal TOF
-
-        end
-
-    elseif (Δx < Δx_battin)
+    elif (Δx < Δx_battin):
         # Use Battin Series TOF Expression
-        ρ = abs(x^2 - 1.0)
-        z = sqrt(1.0 + λ^2 * (x^2 - 1.0))
+        ρ = abs(x**2 - 1.0)
+        z = np.sqrt(1.0 + λ**2 * (x**2 - 1.0))
         η = z - λ * x
         s1 = 0.5 * (1.0 - λ - x * η)
         q = 4.0 / 3.0 * _hypergeometric_2F1(s1)
-        tof = (η^3 * q + 4.0 * λ * η) / 2.0 + m_max * π / (ρ^1.5)
+        tof = (η**3 * q + 4.0 * λ * η) / 2.0 + m_max * np.pi / (ρ**1.5)
 
-    else
+    else:
         # Use Lancaster TOF Expression
-        e = x^2 - 1.0
-        z = sqrt(1.0 + λ^2 * e)
-        y = sqrt(abs(e))
-        if (e < 0.0)
-            d = m_max * π + acos(x * z - λ * e)
-        else
+        e = x**2 - 1.0
+        z = np.sqrt(1.0 + λ**2 * e)
+        y = np.sqrt(abs(e))
+        if (e < 0.0):
+            d = m_max * np.pi + np.acos(x * z - λ * e)
+        else:
             d_temp = y * (z - λ * x) + (x * z - λ * e)
-            if d_temp > 0.0
-                d = log(d_temp)
-            else
-                @info "Fail to Calculate TOF using Lancaster TOF Expression."
-                return NaN
-            end
-        end
+            if d_temp > 0.0:
+                d = np.log(d_temp)
+            else:
+                warnings.warn("Fail to Calculate TOF using Lancaster TOF Expression.")
+                return np.nan
+
         tof = (x - λ * z - d / y) / e
 
-    end
-
     return tof
-end
 
-function _hypergeometric_2F1(z, a=3.0, b=1.0, c=2.5, tol=1.0e-11)
+
+def _hypergeometric_2F1(z, a=3.0, b=1.0, c=2.5, tol=1.0e-11):
     # Initilization
     sj, cj, sj1, cj1, err = 1.0, 1.0, 0.0, 0.0, 1.0
 
     # Iteration
     j = 0
-    while (err > tol)
+    while (err > tol):
         cj1 = cj * (a + j) * (b + j) / (c + j) * z / (j + 1)
         sj1 = sj + cj1
         err = abs(cj1)
         sj, cj = sj1, cj1
         j += 1
-        if j > 1000
-            @error "ERROR: Hypergeometric Function Reaches Maximum Iteration."
-            break
-        end
-    end
+        if j > 1000:
+            raise RuntimeError("Hypergeometric def Reaches Maximum Iteration.")
 
     return sj
-end
 
-function _find_xy(λ, tof, m_multi_revs)
+
+def _find_xy(λ, tof, m_multi_revs):
     # Requirements
-    if abs(λ) >= 1
-        @error "ERROR: Lambda must be more than 1."
-    end
-    if tof < 0
-        @error "ERROR: Non dimensional tof must be a positive number."
-    end
+    if abs(λ) >= 1:
+        raise ValueError("Lambda must be less than 1.")
+    if tof < 0:
+        raise ValueError("Non dimensional tof must be a positive number.")
 
     # ----------------
     # 1. Detect m_max
-    m_max = floor(tof / π)
-    t_00 = acos(λ) + λ * sqrt(1.0 - λ^2) # Eq.(19) in Ref[1]
-    t_0m = t_00 + m_max * π # Minimum Energy Transfer Time: Eq.(19) in Ref[1]
-    t_1 = 2.0 / 3.0 * (1.0 - λ^3)
+    m_max = np.floor(tof / np.pi)
+    t_00 = np.acos(λ) + λ * np.sqrt(1.0 - λ**2) # Eq.(19) in Ref[1]
+    t_0m = t_00 + m_max * np.pi # Minimum Energy Transfer Time: Eq.(19) in Ref[1]
+    t_1 = 2.0 / 3.0 * (1.0 - λ**3)
 
-    if (m_multi_revs > 0) && (m_max > 0) && (tof < t_0m)
+    if (m_multi_revs > 0) and (m_max > 0) and (tof < t_0m):
         x_tmin, t_min = _find_tof_min_by_halley_method(0.0, t_0m, λ, m_max)
 
-        if (tof < t_min) || isnan(t_min)
+        if (tof < t_min) or np.isnan(t_min):
             m_max -= 1
-        end
-    end
 
     # Crop m_max to m_multi_revs
-    m_max = Int8(min(m_multi_revs, m_max))
+    m_max = int(min(m_multi_revs, m_max))
 
     # ----------------
     # 2. Calculate All Solutions in x,y
-    x_all = zeros(typeof(t_00), 2 * m_max + 1)
-    iter_all = zeros(Int16, 2 * m_max + 1)
+    x_all = np.zeros(2 * m_max + 1)
+    iter_all = np.zeros(2 * m_max + 1, dtype=int)
 
     # 2.1. Single Revolution Solution
     # Initial guess
-    if tof >= t_00
-        x_all[1] = -(tof - t_00) / (tof - t_00 + 4.0) #(t_00/tof)^(2/3) - 1.0
-    elseif tof <= t_1
-        x_all[1] = (5.0 * t_1 * (t_1 - tof)) / (2.0 * tof * (1 - λ^5)) + 1.0
-    else
-        x_all[1] = (tof / t_00)^(log(2.0) / log(t_1 / t_00)) - 1.0  #(t_00/tof)^(log2(t_1/t_00)) - 1.0
-    end
+    if tof >= t_00:
+        x_all[1] = -(tof - t_00) / (tof - t_00 + 4.0) #(t_00/tof)**(2/3) - 1.0
+    elif tof <= t_1:
+        x_all[1] = (5.0 * t_1 * (t_1 - tof)) / (2.0 * tof * (1 - λ**5)) + 1.0
+    else:
+        x_all[1] = (tof / t_00)**(np.log(2.0) / np.log(t_1 / t_00)) - 1.0  #(t_00/tof)**(log2(t_1/t_00)) - 1.0
+
 
     # Householder iterations
     iter_all[1], x_all[1] = _find_x_by_householder(tof, x_all[1], λ, 0, 1.0e-5)
 
     # 2.2. Multi Revolution Solution
-    for i = 1:m_max
+    for i in range(1, m_max + 1):
         # Left Householder iterations
-        temp = ((i * π + π) / (8.0 * tof))^(2.0 / 3.0)
+        temp = ((i * np.pi + np.pi) / (8.0 * tof))**(2.0 / 3.0)
         x_all[2*i] = (temp - 1.0) / (temp + 1.0)
         iter_all[2*i], x_all[2*i] = _find_x_by_householder(tof, x_all[2*i], λ, i)
 
         # Right Householder iterations
-        temp = ((8.0 * tof) / (i * π))^(2.0 / 3.0)
+        temp = ((8.0 * tof) / (i * np.pi))**(2.0 / 3.0)
         x_all[2*i+1] = (temp - 1.0) / (temp + 1.0)
         iter_all[2*i+1], x_all[2*i+1] = _find_x_by_householder(tof, x_all[2*i+1], λ, i)
-    end
 
     return iter_all, x_all
-end
 
-function _find_x_by_householder(tof, xn, λ, m, tol_Δx=1.0e-8, max_iter=15)
+
+def _find_x_by_householder(tof, xn, λ, m, tol_Δx=1.0e-8, max_iter=15):
     # Finds x that satisfies f(x)=tn(x)-tof=0 by Householder's method
     iter = 0
-    while true
+    while True:
         tn = _x2tof(xn, λ, m)
 
         # Cannot be calculated
-        if isnan(tn)
-            return iter, NaN
-        end
+        if np.isnan(tn):
+            return iter, np.nan
 
         # Eqs.(22) in Ref[1]
-        f(x, t) = t - tof
-        df_dx(x, t) = (3.0 * t * x - 2.0 + 2.0 * λ^3 * x / sqrt(1.0 - λ^2 * (1.0 - x^2))) / (1.0 - x^2)
-        d2f_dx2(x, t) = (3.0 * t + 5.0 * x * df_dx(x, t) + 2.0 * (1.0 - λ^2) * (λ^3) / (sqrt(1.0 - λ^2 * (1.0 - x^2))^3)) / (1.0 - x^2)
-        d3f_dx3(x, t) = (7.0 * x * d2f_dx2(x, t) + 8.0 * df_dx(x, t) - 6.0 * (1.0 - λ^2) * (λ^5) * x / (sqrt(1.0 - λ^2 * (1.0 - x^2))^5)) / (1.0 - x^2)
+        f = lambda x, t: t - tof
+        df_dx = lambda x, t: (3.0 * t * x - 2.0 + 2.0 * λ**3 * x / np.sqrt(1.0 - λ**2 * (1.0 - x**2))) / (1.0 - x**2)
+        d2f_dx2 = lambda x, t: (3.0 * t + 5.0 * x * df_dx(x, t) + 2.0 * (1.0 - λ**2) * (λ**3) / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**3)) / (1.0 - x**2)
+        d3f_dx3 = lambda x, t: (7.0 * x * d2f_dx2(x, t) + 8.0 * df_dx(x, t) - 6.0 * (1.0 - λ**2) * (λ**5) * x / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**5)) / (1.0 - x**2)
 
         # Householder's Method
         xn_new = xn - f(xn, tn) * (
-            (df_dx(xn, tn)^2 - 0.5 * f(xn, tn) * d2f_dx2(xn, tn))
+            (df_dx(xn, tn)**2 - 0.5 * f(xn, tn) * d2f_dx2(xn, tn))
             /
-            (df_dx(xn, tn) * ((df_dx(xn, tn)^2) - f(xn, tn) * d2f_dx2(xn, tn)) + d3f_dx3(xn, tn) * (f(xn, tn)^2) / 6.0)
+            (df_dx(xn, tn) * ((df_dx(xn, tn)**2) - f(xn, tn) * d2f_dx2(xn, tn)) + d3f_dx3(xn, tn) * (f(xn, tn)**2) / 6.0)
         )
 
         # Break condition
-        if abs(xn_new - xn) < tol_Δx
+        if abs(xn_new - xn) < tol_Δx:
             tn = _x2tof(xn_new, λ, m)
             return iter, xn_new
-        elseif iter > max_iter
-            @info "Householder iteration reaches maximum iteration!"
+        elif iter > max_iter:
+            warnings.warn("Householder iteration reaches maximum iteration!")
             tn = _x2tof(xn_new, λ, m)
             return iter, xn_new
-        end
 
         # Update the value
         xn = xn_new
         iter += 1
 
-    end
 
-end
-
-function _find_tof_min_by_halley_method(xn, tn, λ, m_max, tol_Δx=1.0e-13, max_iter=12)
+def _find_tof_min_by_halley_method(xn, tn, λ, m_max, tol_Δx=1.0e-13, max_iter=12):
     # Find minimum value of transfer time by Halley's method
     iter = 0
-    while true
+    while True:
         # Eqs.(22) in Ref[1]
-        dt_dx(x, t) = (3.0 * t * x - 2.0 + 2.0 * λ^3 * x / sqrt(1.0 - λ^2 * (1.0 - x^2))) / (1.0 - x^2)
-        d2t_dx2(x, t) = (3.0 * t + 5.0 * x * dt_dx(x, t) + 2.0 * (1.0 - λ^2) * (λ^3) / (sqrt(1.0 - λ^2 * (1.0 - x^2))^3)) / (1.0 - x^2)
-        d3t_dx3(x, t) = (7.0 * x * d2t_dx2(x, t) + 8.0 * dt_dx(x, t) - 6.0 * (1.0 - λ^2) * (λ^5) * x / (sqrt(1.0 - λ^2 * (1.0 - x^2))^5)) / (1.0 - x^2)
+        dt_dx = lambda x, t: (3.0 * t * x - 2.0 + 2.0 * λ**3 * x / np.sqrt(1.0 - λ**2 * (1.0 - x**2))) / (1.0 - x**2)
+        d2t_dx2 = lambda x, t: (3.0 * t + 5.0 * x * dt_dx(x, t) + 2.0 * (1.0 - λ**2) * (λ**3) / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**3)) / (1.0 - x**2)
+        d3t_dx3 = lambda x, t: (7.0 * x * d2t_dx2(x, t) + 8.0 * dt_dx(x, t) - 6.0 * (1.0 - λ**2) * (λ**5) * x / (np.sqrt(1.0 - λ**2 * (1.0 - x**2))**5)) / (1.0 - x**2)
 
         # Halley's Method
-        xn_new = xn - (2.0 * dt_dx(xn, tn) * d2t_dx2(xn, tn)) / (2.0 * (d2t_dx2(xn, tn)^2) - dt_dx(xn, tn) * d3t_dx3(xn, tn))
+        xn_new = xn - (2.0 * dt_dx(xn, tn) * d2t_dx2(xn, tn)) / (2.0 * (d2t_dx2(xn, tn)**2) - dt_dx(xn, tn) * d3t_dx3(xn, tn))
 
         # Break condition
-        if abs(xn_new - xn) < tol_Δx
+        if abs(xn_new - xn) < tol_Δx:
             tn = _x2tof(xn_new, λ, m_max)
             return xn_new, tn
-        elseif iter > max_iter
-            @info "Halley iteration reaches maximum iteration!"
+        elif iter > max_iter:
+            warnings.warn("Halley iteration reaches maximum iteration!")
             tn = _x2tof(xn_new, λ, m_max)
             return xn_new, tn
-        end
 
         # Update the value
         tn = _x2tof(xn_new, λ, m_max)
@@ -387,8 +308,5 @@ function _find_tof_min_by_halley_method(xn, tn, λ, m_max, tol_Δx=1.0e-13, max_
         iter += 1
 
         # Cannot be calculated
-        if isnan(tn)
+        if np.isnan(tn):
             return xn_new, tn
-        end
-    end
-end
