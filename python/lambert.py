@@ -336,6 +336,7 @@ if __name__ == "__main__":
         assert num_sol_1 == 1
         assert np.allclose(v1_1[0, :], [-12.146901903784691, -30.249196666164899, 1.732823081867305], rtol=1e-14, atol=1e-14)
         assert np.allclose(v2_1[0, :], [-5.062557143526494, 22.773747568054521, -1.043526507750940],  rtol=1e-14, atol=1e-14)
+        print("Example 1: OK")
 
         # Example used in pykep Tutorial
         mu_2 = 1.32712440018e+11
@@ -353,6 +354,7 @@ if __name__ == "__main__":
         assert np.allclose(v2_2[1, :], [16.828356734556462, 14.965476740707376, -0.80053299320499104], rtol=1e-14, atol=1e-14)
         assert np.allclose(v1_2[2, :], [-26.997843155205635, -17.749606456280773, 1.2394297881268258], rtol=1e-14, atol=1e-14)
         assert np.allclose(v2_2[2, :], [18.383111848123743, 13.641214500991762, -0.85508959337278111], rtol=1e-14, atol=1e-14)
+        print("Example 2: OK")
 
         # Example used in pykep Tutorial
         mu_3 = 1.32712440018e+11
@@ -370,3 +372,4 @@ if __name__ == "__main__":
         assert np.allclose(v2_3[1, :], [18.571456009600071, -19.622376845961542, 0.46414809512526563],   rtol=1e-14, atol=1e-14)
         assert np.allclose(v1_3[2, :], [-32.563106582947683, -7.2041105230019612, -1.0282043543619368],  rtol=1e-14, atol=1e-14)
         assert np.allclose(v2_3[2, :], [-8.9841267620155668, -29.532122399180287, -0.42558653591556856], rtol=1e-14, atol=1e-14)
+        print("Example 3: OK")
