@@ -51,8 +51,8 @@ class ODE(om.ExplicitComponent):
 
 
 # %% Parameters
-nb_seg = 20
-order = 3
+nb_seg = 10
+order = 5
 
 gm = 4.9028e12
 rm = 1737.4e3
@@ -80,7 +80,7 @@ pbm.driver.declare_coloring(show_summary=False, show_sparsity=False)
 
 pbm.driver.opt_settings["tol"] = 1e-10
 pbm.driver.opt_settings["acceptable_tol"] = 1e-8
-pbm.driver.opt_settings["print_level"] = 5
+pbm.driver.opt_settings["print_level"] = 3
 pbm.driver.opt_settings["output_file"] = ""
 pbm.driver.opt_settings["print_timing_statistics"] = "yes"
 pbm.driver.opt_settings["linear_solver"] = "ma57"
@@ -89,10 +89,12 @@ pbm.driver.opt_settings["ma57_automatic_scaling"] = "yes"
 
 # %% Phase and Trajectory
 traj = dm.Trajectory()
+# transcription = dm.GaussLobatto(num_segments=nb_seg, order=order, compressed=True)
+transcription = dm.Radau(num_segments=nb_seg, order=order, compressed=True)
 phase = dm.Phase(
     ode_class=ODE,
     ode_init_kwargs={"mu": 1.0, "thr": twr, "mdot": mdot},
-    transcription=dm.GaussLobatto(num_segments=nb_seg, order=order, compressed=True),
+    transcription=transcription,
 )
 
 traj.add_phase("phase0", phase)
@@ -132,9 +134,7 @@ pbm.set_val("traj.phase0.states:m", phase.interp("m", [1.0, 0.7]))
 pbm.set_val("traj.phase0.controls:alpha", phase.interp("alpha", [np.pi / 3.0, 0.0]))
 
 # %% Solve the Problem
-dm.run_problem(
-    pbm, simulate=True, solution_record_file=None, simulation_record_file=None
-)
+dm.run_problem(pbm, simulate=True)
 
 tv = tc * pbm.get_val("traj.phase0.timeseries.time")
 mv = pbm.get_val("traj.phases.phase0.timeseries.m")
@@ -142,7 +142,7 @@ print(f"\nTime of Flight: {tv[-1, -1]:.3f} s")
 print(f"Final Mass:     {mv[-1, -1]:.3f} kg")
 
 # %% Explicit simulation
-exp_out = traj.simulate(record_file=None)
+exp_out = traj.simulate()
 
 # %% Plots
 _, ax = plt.subplots(nrows=2, ncols=2, constrained_layout=True)
