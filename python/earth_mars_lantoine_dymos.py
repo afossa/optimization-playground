@@ -48,7 +48,7 @@ m_dry_d = 500.0  # dry mass [kg]
 
 # transfer parameters
 tof_d = 348.79 * d2s  # time of flight [s]
-nb_sg = 120  # number of segments
+nb_sg = 40  # number of segments
 order = 3  # transcription order
 et0_d = sp.str2et("2007 APR 10 12:00:00.000")  # initial epoch [s]
 etf_d = et0_d + tof_d  # final epoch [s]
@@ -125,7 +125,11 @@ for i, et in enumerate(etv_d):
 
 
 # %% optimal control problem formulation
+
+
 class ODE(om.ExplicitComponent):
+    """Dynamics of the Earth-Mars transfer."""
+
     def initialize(self):
         self.options.declare("num_nodes", types=int)
         self.options.declare("mu", types=float)
@@ -188,37 +192,44 @@ class ODE(om.ExplicitComponent):
         outputs["endot"] = 0.5 * thr**2
 
 
-# optimal control problem
-pbm = om.Problem(model=om.Group(), reports=None)
-pbm.model.linear_solver = om.DirectSolver()
-pbm.driver = om.pyOptSparseDriver()
+def initialize_problem():
+    """Initialize the optimal control problem."""
 
-pbm.driver.options["optimizer"] = "IPOPT"
-pbm.driver.options["print_results"] = False
-pbm.driver.declare_coloring(show_summary=False, show_sparsity=False)
+    p = om.Problem(model=om.Group(), reports=None)
+    p.model.linear_solver = om.DirectSolver()
+    p.driver = om.pyOptSparseDriver()
 
-pbm.driver.opt_settings["tol"] = 1e-12
-pbm.driver.opt_settings["acceptable_tol"] = 1e-10
-pbm.driver.opt_settings["linear_solver"] = "ma57"
-pbm.driver.opt_settings["nlp_scaling_method"] = "gradient-based"
-pbm.driver.opt_settings["ma57_automatic_scaling"] = "yes"
-pbm.driver.opt_settings["print_level"] = 5
-pbm.driver.opt_settings["print_frequency_iter"] = 10
-pbm.driver.opt_settings["print_user_options"] = "yes"
-pbm.driver.opt_settings["print_timing_statistics"] = "yes"
+    p.driver.options["optimizer"] = "IPOPT"
+    p.driver.options["print_results"] = False
+    p.driver.declare_coloring(show_summary=False, show_sparsity=False)
 
-# trajectory and phase
+    p.driver.opt_settings["tol"] = 1e-12
+    p.driver.opt_settings["acceptable_tol"] = 1e-10
+    p.driver.opt_settings["max_iter"] = 1000
+    p.driver.opt_settings["linear_solver"] = "ma57"
+    p.driver.opt_settings["ma57_automatic_scaling"] = "yes"
+    p.driver.opt_settings["print_level"] = 5
+    p.driver.opt_settings["file_print_level"] = 0
+    p.driver.opt_settings["output_file"] = ""
+    p.driver.opt_settings["print_frequency_iter"] = 10
+    p.driver.opt_settings["print_user_options"] = "yes"
+    p.driver.opt_settings["print_timing_statistics"] = "yes"
+
+    return p
+
+
+# initialize problem, trajectory, and phase
+pbm1 = initialize_problem()
 traj = dm.Trajectory()
+transcription = dm.GaussLobatto(num_segments=nb_sg, order=order, compressed=True)
 phase = dm.Phase(
     ode_class=ODE,
     ode_init_kwargs={"mu": gm, "vex": vex},
-    transcription=dm.GaussLobatto(
-        num_segments=nb_sg, order=order, compressed=True
-    ),
+    transcription=transcription,
 )
 
 traj.add_phase("phase0", phase)
-pbm.model.add_subsystem("traj", traj)
+pbm1.model.add_subsystem("traj", traj)
 
 # time, state, and control variables
 phase.set_time_options(fix_initial=True, fix_duration=True, units="s")
@@ -249,25 +260,50 @@ phase.add_state(
 )
 
 phase.add_control(
-    "thr", lower=0.0, upper=thr_max, targets=["thr"], units="kg*km/s/s"
+    "thr",
+    lower=0.0,
+    upper=thr_max,
+    targets=["thr"],
+    units="kg*km/s/s",
+    continuity=False,
+    rate_continuity=False,
+    rate2_continuity=False,
 )
-phase.add_control("ux", targets=["ux"], units="kg*km/s/s")
-phase.add_control("uy", targets=["uy"], units="kg*km/s/s")
-phase.add_control("uz", targets=["uz"], units="kg*km/s/s")
+phase.add_control(
+    "ux",
+    targets=["ux"],
+    units="kg*km/s/s",
+    continuity=False,
+    rate_continuity=False,
+    rate2_continuity=False,
+)
+phase.add_control(
+    "uy",
+    targets=["uy"],
+    units="kg*km/s/s",
+    continuity=False,
+    rate_continuity=False,
+    rate2_continuity=False,
+)
+phase.add_control(
+    "uz",
+    targets=["uz"],
+    units="kg*km/s/s",
+    continuity=False,
+    rate_continuity=False,
+    rate2_continuity=False,
+)
 
 # path constraints
 phase.add_path_constraint(
     "pc=ux**2 + uy**2 + uz**2 - thr**2", upper=0.0, units="kg**2*km**2/s**4"
 )
 
-# objective function
-if obj_id == 0:
-    phase.add_objective("en", loc="final")
-else:
-    phase.add_objective("m", loc="final", scaler=-1.0)
+# objective function, solve the energy optimal problem first
+phase.add_objective("en", loc="final")
 
 # problem setup
-pbm.setup(check=True)
+pbm1.setup(check=True, logger=None)
 
 # initial guess
 phase.set_time_val(initial=t0, duration=tof)
@@ -285,14 +321,64 @@ phase.set_control_val("uy", [0.0, 0.0])
 phase.set_control_val("uz", [0.0, 0.0])
 
 # %% problem solution and explicit simulation
+
+# energy optimal solution with Lambert arc as initial guess
 dm.run_problem(
-    pbm,
+    pbm1,
     run_driver=True,
     simulate=True,
-    solution_record_file=None,
-    simulation_record_file=None,
 )
 
+if obj_id == 0:
+    # energy optimal solution is the final output
+    pbm = pbm1
+else:
+    # solve the fuel optimal problem using the energy optimal as initial guess
+
+    # state and control variables
+    state_vars = ["x", "y", "z", "vx", "vy", "vz", "m", "en"]
+    control_vars = ["thr", "ux", "uy", "uz"]
+
+    # phase definition
+    phase2 = phase.duplicate(
+        boundary_constraints=True,
+        path_constraints=True,
+        fix_initial_time=True,
+        fix_initial_states=state_vars,
+        fix_final_states=["x", "y", "z", "vx", "vy", "vz"],
+    )
+    phase2.add_objective("m", loc="final", scaler=-1.0)
+
+    # trajectory
+    traj2 = dm.Trajectory()
+    traj2.add_phase("phase0", phase2)
+
+    # problem
+    pbm2 = initialize_problem()
+    pbm2.model.add_subsystem("traj", traj2)
+    pbm2.setup(check=True, logger=None)
+
+    # initial guess
+    t1 = pbm1.get_val("traj.phases.phase0.timeseries.time")
+    phase2.set_time_val(initial=t0, duration=tof)
+    for sv in state_vars:
+        phase2.set_state_val(
+            sv, pbm1.get_val(f"traj.phases.phase0.timeseries.{sv}"), t1
+        )
+    for cv in control_vars:
+        phase2.set_control_val(
+            cv, pbm1.get_val(f"traj.phases.phase0.timeseries.{cv}"), t1
+        )
+
+    # fuel optimal solution
+    dm.run_problem(
+        pbm2,
+        run_driver=True,
+        simulate=True,
+    )
+    pbm = pbm2
+
+# extract optimal solution
 tv_o = pbm.get_val("traj.phases.phase0.timeseries.time")
 
 mv_o = pbm.get_val("traj.phases.phase0.timeseries.m")
@@ -314,6 +400,8 @@ print(f"Problem type:   {obj_nm:s} optimal")
 print(f"Remaining fuel: {mc * (mv_o[-1, -1] - m_dry):.3f} kg")
 
 # %% plots
+
+# trajectory in the ecliptic plane
 _, ax = plt.subplots(1, 1)
 ax.scatter(0.0, 0.0, color="gold", label="Sun")
 ax.plot(rvv_l[0, :], rvv_l[1, :], color="blue", label="Lambert")
@@ -327,6 +415,7 @@ ax.set_xlabel(r"$x$ [AU]")
 ax.set_ylabel(r"$y$ [AU]")
 ax.set_title("Earth-Mars transfer")
 
+# thrust profile
 _, ax2 = plt.subplots(1, 1)
 ax2.plot(
     (tc / d2s) * tv_o,
@@ -347,6 +436,7 @@ ax2.set_xlabel(r"$t$ [days]")
 ax2.set_ylabel(r"$T$ [N]")
 ax2.set_title("Thrust profile")
 
+# energy integral profile
 _, ax3 = plt.subplots(1, 1)
 ax3.plot(
     (tc / d2s) * tv_o,
