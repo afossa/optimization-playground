@@ -11,14 +11,12 @@ pp. 418–442, Aug. 2012, doi: 10.1007/s10957-012-0038-1.
 
 import os
 import numpy as np
-import scipy.integrate as spi
 import spiceypy as sp
-from gekko import GEKKO
-
+import pykep as pk
 import matplotlib.pyplot as plt
 
 from pathlib import Path
-from lambert import lambert_solver
+from gekko import GEKKO
 
 # %% SPICE kernels
 
@@ -48,7 +46,7 @@ m_dry_d = 500.0  # dry mass [kg]
 
 # transfer parameters
 tof_d = 348.79 * d2s  # time of flight [s]
-nb_sg = 40  # number of segments
+nb_sg = 120  # number of segments
 order = 3  # transcription order
 et0_d = sp.str2et("2007 APR 10 12:00:00.000")  # initial epoch [s]
 etf_d = et0_d + tof_d  # final epoch [s]
@@ -85,31 +83,24 @@ tf = t0 + tof  # final time [-]
 # %% initial guess from Lambert solution
 
 # Lambert problem solution
-sol_l = lambert_solver(rv0[0:3], rvf[0:3], tof, gm, 0)
+sol_l = pk.lambert_problem(r1=rv0[0:3], r2=rvf[0:3], tof=tof, mu=gm)
 
-# Lambert Δv
-dv0_l = sol_l[0][0] - rv0[3:6]
-dvf_l = rvf[3:6] - sol_l[1][0]
+v0_l = np.asarray(sol_l.get_v1()[0])
+vf_l = np.asarray(sol_l.get_v2()[0])
 
 # Lambert arc sampling
-rv0_l = np.concatenate((rv0[0:3], sol_l[0][0]))
 tv_l = np.linspace(t0, tf, nb_sg + 1)
+rvv_l = np.empty((6, nb_sg + 1))
 
-
-def kepler(_, y, mu):
-    """Differential equations for the Keplerian motion."""
-    r = np.linalg.norm(y[0:3])
-    return np.concatenate((y[3:6], -mu / r**3 * y[0:3]))
-
-
-sol_l = spi.solve_ivp(
-    kepler, [t0, tf], rv0_l, method="DOP853", t_eval=tv_l, args=(gm,)
-)
-rvv_l = sol_l.y
-
-# fix boundary conditions
+# boundary conditions
 rvv_l[:, 0] = rv0
 rvv_l[:, -1] = rvf
+
+# intermediate waypoints
+for i in range(1, nb_sg):
+    ri, vi = pk.propagate_lagrangian(rv0[0:3], v0_l, (tv_l[i] - t0), gm)
+    rvv_l[0:3, i] = ri
+    rvv_l[3:6, i] = vi
 
 # tangential thrust direction
 uv_l = rvv_l[3:6, :] / np.linalg.norm(rvv_l[3:6, :], axis=0)
@@ -214,5 +205,3 @@ ax.set_ylabel(r"$y$ [AU]")
 ax.set_title("Earth-Mars transfer")
 
 plt.show()
-
-# %%
