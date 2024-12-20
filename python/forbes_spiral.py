@@ -6,6 +6,7 @@ Toulouse, France, Jun. 2002, pp. 1–14. [Online]. Available:
 https://corpora.tika.apache.org/base/docs/govdocs1/970/970012.pdf
 """
 
+import json
 import numpy as np
 import scipy.integrate as spi
 import matplotlib.pyplot as plt
@@ -667,20 +668,41 @@ class TangentialThrust:
         return states_dot
 
 
+class CustomEncoder(json.JSONEncoder):
+    """Custom JSON encoder."""
+
+    def default(self, o):
+        """Return a serializable data type."""
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, Spacecraft):
+            return o.__dict__
+        return json.JSONEncoder.default(self, o)
+
+
 if __name__ == "__main__":
     import os
     from pathlib import Path
 
+    # load SPICE kernels
     pth = Path(__file__).parent.parent
     spice.furnsh(os.path.join(pth, "kernels/gm_de440.tpc"))
 
+    # spacecraft object
     sc = Spacecraft(1000, 20.0, 2000)
     print(sc)
 
+    # spiral object
     gm = spice.bodvcd(301, "GM", 1)[1][0]
     tt = TangentialThrust(sc, 2000, 5000, np.pi / 180, gm)
-    tt.compute_time_series(nb_points=2000)
 
+    # write data to JSON file
+    # tt.compute_time_series(nb_points=2)
+    # with open("forbes_spiral.json", "w") as file:
+    #     json.dump(tt.__dict__, file, indent=4, cls=CustomEncoder)
+
+    # timeseries and trajectory plots
+    tt.compute_time_series(nb_points=2000)
     title = "Tangential thrust approximation"
     pt = PolarTimeSeries(
         title, tt.t_vec, tt.a_sol[:4, :], tt.num_sol[:4, :], tt.mass_vec, tt.thrust_vec
