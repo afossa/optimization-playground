@@ -57,9 +57,10 @@ class PolarTrajectory:
 
     """
 
-    def __init__(self, title, r_dep, r_arr, r_body, r_vec, ang_vec,
-                 r_vec_exp=None, ang_vec_exp=None):
-        """Initializes PolarTrajectory. """
+    def __init__(
+        self, title, r_dep, r_arr, r_body, r_vec, ang_vec, r_vec_exp=None, ang_vec_exp=None
+    ):
+        """Initializes PolarTrajectory."""
 
         self.title = title
         self.r_dep = r_dep
@@ -71,7 +72,7 @@ class PolarTrajectory:
         self.ang_vec_exp = ang_vec_exp
 
     def plot(self):
-        """Plots the transfer trajectory. """
+        """Plots the transfer trajectory."""
 
         # planet surface, initial and target orbits points
         alpha = np.linspace(0, 2 * np.pi, 1000)
@@ -92,26 +93,26 @@ class PolarTrajectory:
         # figure
         _, axs = plt.subplots(constrained_layout=True)
 
-        axs.plot(x_body, y_body, label='Moon surface')
-        axs.plot(x_dep, y_dep, label='Initial orbit')
-        axs.plot(x_arr, y_arr, label='Target orbit')
-        axs.plot(x_vec, y_vec, label='Transfer trajectory')
+        axs.plot(x_body, y_body, label="Moon surface")
+        axs.plot(x_dep, y_dep, label="Initial orbit")
+        axs.plot(x_arr, y_arr, label="Target orbit")
+        axs.plot(x_vec, y_vec, label="Transfer trajectory")
 
-        axs.scatter(x_vec[0], y_vec[0], color='k', label='Departure point', zorder=10)
-        axs.scatter(x_vec[-1], y_vec[-1], color='r', label='Insertion point', zorder=15)
+        axs.scatter(x_vec[0], y_vec[0], color="k", label="Departure point", zorder=10)
+        axs.scatter(x_vec[-1], y_vec[-1], color="r", label="Insertion point", zorder=15)
 
         if (self.r_vec_exp is not None) and (self.ang_vec_exp is not None):
             x_vec_exp = self.r_vec_exp * np.cos(self.ang_vec_exp)
             y_vec_exp = self.r_vec_exp * np.sin(self.ang_vec_exp)
-            axs.plot(x_vec_exp, y_vec_exp, '.', color='k', label='Explicit simulation')
+            axs.plot(x_vec_exp, y_vec_exp, ".", color="k", label="Explicit simulation")
 
-        axs.set_aspect('equal')
+        axs.set_aspect("equal")
         axs.grid()
         axs.legend(bbox_to_anchor=(1, 1), loc=2)
-        axs.set_xlabel('x (km)')
-        axs.set_ylabel('y (km)')
+        axs.set_xlabel("x (km)")
+        axs.set_ylabel("y (km)")
         axs.set_title(self.title)
-        axs.tick_params(axis='x', rotation=60)
+        axs.tick_params(axis="x", rotation=60)
 
 
 class PolarTimeSeries:
@@ -152,7 +153,7 @@ class PolarTimeSeries:
     """
 
     def __init__(self, title, time, a_sol, num_sol, mass, thrust):
-        """Initializes PolarTimeSeries class. """
+        """Initializes PolarTimeSeries class."""
 
         self.title = title
         self.time = time
@@ -162,61 +163,64 @@ class PolarTimeSeries:
         self.thrust = thrust
 
     def plot(self):
-        """Plots the time series. """
+        """Plots the time series."""
 
         fig, axs = plt.subplots(2, 3, constrained_layout=True)
         fig.suptitle(self.title)
 
         # radius (km)
-        axs[0, 0].plot(self.time, self.a_sol[0, :], color='b', label='analytic')
-        axs[0, 0].plot(self.time, self.num_sol[0, :], '--', color='r', label='numerical')
-        axs[0, 0].set_xlabel('time (s)')
-        axs[0, 0].set_ylabel('r (km)')
-        axs[0, 0].set_title('Radius')
+        axs[0, 0].plot(self.time, self.a_sol[0, :], color="b", label="analytic")
+        axs[0, 0].plot(self.time, self.num_sol[0, :], "--", color="r", label="numerical")
+        axs[0, 0].set_xlabel("time (s)")
+        axs[0, 0].set_ylabel("r (km)")
+        axs[0, 0].set_title("Radius")
         axs[0, 0].grid()
         # axs[0, 0].legend(loc=0)
 
         # angle (deg)
-        axs[0, 1].plot(self.time, self.a_sol[1, :] * 180 / np.pi, color='b', label='analytic')
-        axs[0, 1].plot(self.time, self.num_sol[1, :] * 180 / np.pi, '--', color='r',
-                       label='numerical')
-        axs[0, 1].set_xlabel('time (s)')
-        axs[0, 1].set_ylabel('theta (deg)')
-        axs[0, 1].set_title('Angle')
+        axs[0, 1].plot(
+            self.time, self.a_sol[1, :] * 180 / np.pi, color="b", label="analytic"
+        )
+        axs[0, 1].plot(
+            self.time, self.num_sol[1, :] * 180 / np.pi, "--", color="r", label="numerical"
+        )
+        axs[0, 1].set_xlabel("time (s)")
+        axs[0, 1].set_ylabel("theta (deg)")
+        axs[0, 1].set_title("Angle")
         axs[0, 1].grid()
         # axs[0, 1].legend(loc=0)
 
         # flight path angle (deg)
-        axs[0, 2].plot(self.time, self.thrust, '--', color='r', label='numerical')
-        axs[0, 2].set_xlabel('time (s)')
-        axs[0, 2].set_ylabel('thrust (N)')
-        axs[0, 2].set_title('Thrust magnitude')
+        axs[0, 2].plot(self.time, self.thrust, "--", color="r", label="numerical")
+        axs[0, 2].set_xlabel("time (s)")
+        axs[0, 2].set_ylabel("thrust (N)")
+        axs[0, 2].set_title("Thrust magnitude")
         axs[0, 2].grid()
         # axs[0, 2].legend(loc=0)
 
         # radial velocity (km/s)
-        axs[1, 0].plot(self.time, self.a_sol[2, :], color='b', label='analytic')
-        axs[1, 0].plot(self.time, self.num_sol[2, :], '--', color='r', label='numerical')
-        axs[1, 0].set_xlabel('time (s)')
-        axs[1, 0].set_ylabel('u (km/s)')
-        axs[1, 0].set_title('Radial velocity')
+        axs[1, 0].plot(self.time, self.a_sol[2, :], color="b", label="analytic")
+        axs[1, 0].plot(self.time, self.num_sol[2, :], "--", color="r", label="numerical")
+        axs[1, 0].set_xlabel("time (s)")
+        axs[1, 0].set_ylabel("u (km/s)")
+        axs[1, 0].set_title("Radial velocity")
         axs[1, 0].grid()
         # axs[1, 0].legend(loc=0)
 
         # tangential velocity (km/s)
-        axs[1, 1].plot(self.time, self.a_sol[3, :], color='b', label='analytic')
-        axs[1, 1].plot(self.time, self.num_sol[3, :], '--', color='r', label='numerical')
-        axs[1, 1].set_xlabel('time (s)')
-        axs[1, 1].set_ylabel('v (km/s)')
-        axs[1, 1].set_title('Tangential velocity')
+        axs[1, 1].plot(self.time, self.a_sol[3, :], color="b", label="analytic")
+        axs[1, 1].plot(self.time, self.num_sol[3, :], "--", color="r", label="numerical")
+        axs[1, 1].set_xlabel("time (s)")
+        axs[1, 1].set_ylabel("v (km/s)")
+        axs[1, 1].set_title("Tangential velocity")
         axs[1, 1].grid()
         # axs[1, 1].legend(loc=0)
 
         # mass (kg)
-        axs[1, 2].plot(self.time, self.mass, '--', color='r', label='numerical')
-        axs[1, 2].set_xlabel('time (s)')
-        axs[1, 2].set_ylabel('mass (kg)')
-        axs[1, 2].set_title('Mass')
+        axs[1, 2].plot(self.time, self.mass, "--", color="r", label="numerical")
+        axs[1, 2].set_xlabel("time (s)")
+        axs[1, 2].set_ylabel("mass (kg)")
+        axs[1, 2].set_title("Mass")
         axs[1, 2].grid()
         # axs[1, 2].legend(loc=0)
 
@@ -260,8 +264,10 @@ class Spacecraft:
 
     """
 
-    def __init__(self, mass0, thrust_max, isp, mass_dry=None, thrust_min=0.0, g0=9.80665, scale=1e-3):
-        """Initializes Spacecraft class. """
+    def __init__(
+        self, mass0, thrust_max, isp, mass_dry=None, thrust_min=0.0, g0=9.80665, scale=1e-3
+    ):
+        """Initializes Spacecraft class."""
 
         self.mass0 = float(mass0)
         self.thrust_max = float(thrust_max)
@@ -277,17 +283,19 @@ class Spacecraft:
         self.thrust_min = thrust_min
 
     def __str__(self):
-        """Prints the Spacecraft object attributes. """
+        """Prints the Spacecraft object attributes."""
 
-        lines = ['\n{:^40s}'.format('Spacecraft characteristics:'),
-                 '\n{:<25s}{:>12.3f}{:>3s}'.format('Initial mass:', self.mass0, 'kg'),
-                 '{:<25s}{:>12.3f}{:>3s}'.format('Dry mass:', self.mass_dry, 'kg'),
-                 '{:<25s}{:>12.3f}{:>2s}'.format('Max thrust:', self.thrust_max, 'N'),
-                 '{:<25s}{:>12.3f}{:>2s}'.format('Min thrust:', self.thrust_min, 'N'),
-                 '{:<25s}{:>12.3f}{:>2s}'.format('Specific impulse:', self.isp, 's'),
-                 '{:<25s}{:>12.3f}{:>2s}'.format('Exhaust velocity:', self.vex, ' m/s')]
+        lines = [
+            "\n{:^40s}".format("Spacecraft characteristics:"),
+            "\n{:<25s}{:>12.3f}{:>3s}".format("Initial mass:", self.mass0, "kg"),
+            "{:<25s}{:>12.3f}{:>3s}".format("Dry mass:", self.mass_dry, "kg"),
+            "{:<25s}{:>12.3f}{:>2s}".format("Max thrust:", self.thrust_max, "N"),
+            "{:<25s}{:>12.3f}{:>2s}".format("Min thrust:", self.thrust_min, "N"),
+            "{:<25s}{:>12.3f}{:>2s}".format("Specific impulse:", self.isp, "s"),
+            "{:<25s}{:>12.3f}{:>2s}".format("Exhaust velocity:", self.vex, " m/s"),
+        ]
 
-        printed = '\n'.join(lines)
+        printed = "\n".join(lines)
 
         return printed
 
@@ -363,8 +371,10 @@ class TangentialThrust:
 
     """
 
-    def __init__(self, spacecraft, r_init, r_final, fpa_init, gm_r2bp, t_init=0.0, theta_init=0.0):
-        """Initializes TangentialThrust class. """
+    def __init__(
+        self, spacecraft, r_init, r_final, fpa_init, gm_r2bp, t_init=0.0, theta_init=0.0
+    ):
+        """Initializes TangentialThrust class."""
 
         self.spacecraft = spacecraft
         self.r_init = r_init
@@ -376,13 +386,19 @@ class TangentialThrust:
         self.theta_init = theta_init
 
         # final angle
-        self.theta_final = \
+        self.theta_final = (
             self.theta_init + (1.0 - self.r_init / self.r_final) / self.tan_fpa_init
+        )
 
         # time of flight and final time
-        sol = spi.solve_ivp(lambda t, y: self.dt_dtheta(y, t),
-                            t_span=[self.theta_init, self.theta_final],
-                            y0=[0.0], method="DOP853", rtol=1e-14, atol=1e-14)
+        sol = spi.solve_ivp(
+            lambda t, y: self.dt_dtheta(y, t),
+            t_span=[self.theta_init, self.theta_final],
+            y0=[0.0],
+            method="DOP853",
+            rtol=1e-14,
+            atol=1e-14,
+        )
         # time, _ = odeint(self.dt_dtheta, y0=[0.0], t=[self.theta_init, self.theta_final],
         #                  full_output=True, rtol=dft.rtol, atol=dft.atol)
 
@@ -390,8 +406,11 @@ class TangentialThrust:
         self.t_final = self.t_init + self.tof
 
         # initialization
-        self.t_vec = self.theta_vec = self.r_vec = self.u_vec = self.v_vec = self.fpa_vec = \
-            self.acc_vec = self.mass_vec = self.thrust_vec = self.a_sol = self.num_sol = None
+        self.t_vec = self.theta_vec = self.r_vec = self.u_vec = self.v_vec = (
+            self.fpa_vec
+        ) = self.acc_vec = self.mass_vec = self.thrust_vec = self.a_sol = self.num_sol = (
+            None
+        )
 
     def compute_time_series(self, **kwargs):
         """Computes the time series of angle, radius, flight path angle, tangential velocity,
@@ -409,44 +428,55 @@ class TangentialThrust:
         """
 
         # time vector in which the solution is computed
-        if 'time' in kwargs:
-            time = kwargs['time']
+        if "time" in kwargs:
+            time = kwargs["time"]
             time = np.sort(np.asarray(time))
-            if np.allclose(np.array([self.t_init, self.t_final]),
-                           np.array([time[0], time[-1]])):
+            if np.allclose(
+                np.array([self.t_init, self.t_final]), np.array([time[0], time[-1]])
+            ):
                 self.t_vec = time
             else:
-                raise ValueError('Elements in time must lie in [t0, tf]')
+                raise ValueError("Elements in time must lie in [t0, tf]")
 
-        elif 'nb_points' in kwargs:
-            nb_points = kwargs['nb_points']
+        elif "nb_points" in kwargs:
+            nb_points = kwargs["nb_points"]
             if isinstance(nb_points, int) and nb_points > 1:
                 self.t_vec = np.linspace(self.t_init, self.t_final, nb_points)
             else:
-                raise TypeError('Number of points must be a positive integer nb_points > 1')
+                raise TypeError("Number of points must be a positive integer nb_points > 1")
 
         else:
-            raise Exception('Must provide one between time vector time or number of points '
-                            'nb_points')
+            raise Exception(
+                "Must provide one between time vector time or number of points " "nb_points"
+            )
 
         # analytic solution and numerical integration
         self.analytic_solution()
         self.simulate()
 
         check = np.allclose(self.a_sol[:4, :], self.num_sol[:4, :], rtol=1e-3, atol=1e-3)
-        print('{:<50s}{:<30s}'.format('Match between analytic and numerical solutions',
-                                      str(check)))
+        print(
+            "{:<50s}{:<30s}".format(
+                "Match between analytic and numerical solutions", str(check)
+            )
+        )
 
         # mass and thrust magnitude time series
         self.mass_vec = self.num_sol[4, :]
         self.thrust_vec = self.acc_vec * self.mass_vec / self.spacecraft.scale
 
     def analytic_solution(self):
-        """Analytic solution for the time series of ``[r, theta, u, v, fpa, a]``. """
+        """Analytic solution for the time series of ``[r, theta, u, v, fpa, a]``."""
 
-        sol = spi.solve_ivp(self.theta_dot, t_span=(self.t_init, self.t_final),
-                            y0=[self.theta_init], method="DOP853", t_eval=self.t_vec,
-                            rtol=1e-14, atol=1e-14)
+        sol = spi.solve_ivp(
+            self.theta_dot,
+            t_span=(self.t_init, self.t_final),
+            y0=[self.theta_init],
+            method="DOP853",
+            t_eval=self.t_vec,
+            rtol=1e-14,
+            atol=1e-14,
+        )
 
         # theta, sol = odeint(self.theta_dot, y0=[self.theta_init], t=self.t_vec,
         #                     full_output=True, rtol=dft.rtol, atol=dft.atol, tfirst=True)
@@ -456,30 +486,45 @@ class TangentialThrust:
         self.v_vec = self.r_vec * self.theta_dot(self.t_vec, self.theta_vec)
         self.u_vec = self.tan_fpa_theta(self.theta_vec) * self.v_vec
         self.fpa_vec = np.arctan(self.tan_fpa_theta(self.theta_vec))
-        self.acc_vec = \
-            self.gm_r2bp * self.tan_fpa_init ** 2 / (self.r_init ** 2 * 2 * np.sin(self.fpa_vec))
-        self.a_sol = np.vstack((self.r_vec, self.theta_vec, self.u_vec, self.v_vec, self.fpa_vec,
-                                self.acc_vec))
+        self.acc_vec = (
+            self.gm_r2bp
+            * self.tan_fpa_init**2
+            / (self.r_init**2 * 2 * np.sin(self.fpa_vec))
+        )
+        self.a_sol = np.vstack(
+            (self.r_vec, self.theta_vec, self.u_vec, self.v_vec, self.fpa_vec, self.acc_vec)
+        )
 
-        print('{:<50s}{:<30s}'.format('Computing analytic solution', sol['message']))
+        print("{:<50s}{:<30s}".format("Computing analytic solution", sol["message"]))
 
     def simulate(self):
-        """Explicitly simulates the transfer trajectory. """
+        """Explicitly simulates the transfer trajectory."""
 
         # initial conditions
-        state0 = [self.r_init, self.theta_init, self.u_vec[0], self.v_vec[0],
-                  self.spacecraft.mass0]
+        state0 = [
+            self.r_init,
+            self.theta_init,
+            self.u_vec[0],
+            self.v_vec[0],
+            self.spacecraft.mass0,
+        ]
 
-        sol = spi.solve_ivp(self.odes, t_span=(self.t_init, self.t_final),
-                            y0=state0, method="DOP853", t_eval=self.t_vec,
-                            rtol=1e-14, atol=1e-14)
+        sol = spi.solve_ivp(
+            self.odes,
+            t_span=(self.t_init, self.t_final),
+            y0=state0,
+            method="DOP853",
+            t_eval=self.t_vec,
+            rtol=1e-14,
+            atol=1e-14,
+        )
 
         # states, sol = odeint(self.odes, y0=state0, t=self.t_vec, full_output=True,
         #                      rtol=dft.rtol, atol=dft.atol, tfirst=True)
 
         self.num_sol = sol.y
 
-        print('{:<50s}{:<30s}'.format('Simulating trajectory', sol['message']))
+        print("{:<50s}{:<30s}".format("Simulating trajectory", sol["message"]))
 
     def r_theta(self, theta):
         """Defines an explicit expression for the radius as a function of the angle theta.
@@ -501,8 +546,8 @@ class TangentialThrust:
         return radius
 
     def dr_dtheta(self, theta):
-        """Defines an explicit expression for the first derivative of the radius with respect to
-        the angle theta.
+        """Defines an explicit expression for the first derivative
+        of the radius with respect to the angle theta.
 
         Parameters
         ----------
@@ -521,8 +566,8 @@ class TangentialThrust:
         return dr_dtheta
 
     def tan_fpa_theta(self, theta):
-        """Defines an explicit expression for the tangent of the flight path angle as a function
-        of the angle theta.
+        """Defines an explicit expression for the tangent of
+        the flight path angle as a function of the angle theta.
 
         Parameters
         ----------
@@ -541,7 +586,8 @@ class TangentialThrust:
         return tan_fpa
 
     def theta_dot(self, _, theta):
-        """Defines an explicit expression for the first derivative of theta with respect to time.
+        """Defines an explicit expression for the first
+        derivative of theta with respect to time.
 
         Parameters
         ----------
@@ -557,7 +603,7 @@ class TangentialThrust:
 
         """
 
-        theta_dot = (self.gm_r2bp ** 0.5) * (self.r_theta(theta) ** -1.5)
+        theta_dot = (self.gm_r2bp**0.5) * (self.r_theta(theta) ** -1.5)
 
         return theta_dot
 
@@ -602,21 +648,26 @@ class TangentialThrust:
         """
 
         speed = (state[2] ** 2 + state[3] ** 2) ** 0.5  # velocity magnitude [km/s]
-        acc = (self.gm_r2bp / self.r_init ** 2) * (np.tan(self.fpa_init) ** 2 / 2.0)  # thrust acceleration [km/s^2]
+        acc = (self.gm_r2bp / self.r_init**2) * (
+            np.tan(self.fpa_init) ** 2 / 2.0
+        )  # thrust acceleration [km/s^2]
 
         r_dot = state[2]
         theta_dot = state[3] / state[0]
-        u_dot = - self.gm_r2bp / state[0] ** 2 + state[3] ** 2 / state[0] + acc
-        v_dot = - state[2] * state[3] / state[0] + acc * (state[3] / state[2])
-        mass_dot = - (acc / (self.spacecraft.vex * self.spacecraft.scale)) * state[4] * (speed / state[2])
+        u_dot = -self.gm_r2bp / state[0] ** 2 + state[3] ** 2 / state[0] + acc
+        v_dot = -state[2] * state[3] / state[0] + acc * (state[3] / state[2])
+        mass_dot = (
+            -(acc / (self.spacecraft.vex * self.spacecraft.scale))
+            * state[4]
+            * (speed / state[2])
+        )
 
         states_dot = [r_dot, theta_dot, u_dot, v_dot, mass_dot]
 
         return states_dot
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     import os
     from pathlib import Path
 
@@ -626,13 +677,14 @@ if __name__ == '__main__':
     sc = Spacecraft(1000, 20.0, 2000)
     print(sc)
 
-    gm = spice.bodvcd(301, 'GM', 1)[1][0]
+    gm = spice.bodvcd(301, "GM", 1)[1][0]
     tt = TangentialThrust(sc, 2000, 5000, np.pi / 180, gm)
     tt.compute_time_series(nb_points=2000)
 
-    title = 'Tangential thrust approximation'
-    pt = PolarTimeSeries(title, tt.t_vec, tt.a_sol[:4, :], tt.num_sol[:4, :], tt.mass_vec,
-                         tt.thrust_vec)
+    title = "Tangential thrust approximation"
+    pt = PolarTimeSeries(
+        title, tt.t_vec, tt.a_sol[:4, :], tt.num_sol[:4, :], tt.mass_vec, tt.thrust_vec
+    )
     pp = PolarTrajectory(title, tt.r_init, tt.r_final, 1738.1, tt.r_vec, tt.theta_vec)
     pt.plot()
     pp.plot()
