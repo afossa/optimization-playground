@@ -1,4 +1,3 @@
-# Trajectory Optimization
+# Optimization Playground
 
-Collections of trajectory optimization examples
-
+My playground to experiment with different optimization techniques, frameworks, and solvers.
