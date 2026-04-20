@@ -3,6 +3,7 @@ using StaticArrays
 using LinearAlgebra
 using JuMP
 using Ipopt
+using UnoSolver
 
 function rosenbrock_1d(x::AbstractVector, p::AbstractVector{<:Real})
     return (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
@@ -37,11 +38,18 @@ x0 = SA[-3.0, -4.0];
 @assert norm(ForwardDiff.gradient(x -> rosenbrock_1d(x, pars), x0) .- rosenbrock_gradient_1d(x0, pars)) ≈ 0.0
 @assert norm(ForwardDiff.hessian(x -> rosenbrock_1d(x, pars), x0) .- rosenbrock_hessian_1d(x0, pars)) ≈ 0.0
 
-model = Model(Ipopt.Optimizer);
-set_attribute(model, "print_user_options", "yes");
+model = Model(() -> UnoSolver.Optimizer(preset="ipopt"));
+set_attribute(model, "primal_tolerance", 1e-12);
+set_attribute(model, "dual_tolerance", 1e-12);
+set_attribute(model, "max_iterations", 200);
+# Using the Hessian approximation increases the number of iterations from 30 to 182.
+set_attribute(model, "hessian_model", "exact");
+
+# Ipopt options
+# set_attribute(model, "print_user_options", "yes");
 # Using the Hessian approximation increases the number of iterations from 30 to 40.
 # set_attribute(model, "hessian_approximation", "limited-memory");
-set_attribute(model, "tol", 1e-12);
+# set_attribute(model, "tol", 1e-12);
 
 @variable(model, x[1:2]);
 @objective(model, Min, rosenbrock_1d(x, pars));

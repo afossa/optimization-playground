@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "74cc0abacae615e13b196225a2f9350d32c11392"
+project_hash = "9c23a3aa0ea080792e926698bf5fee801f95f7c8"
 
 [[deps.ADNLPModels]]
 deps = ["ADTypes", "ForwardDiff", "LinearAlgebra", "NLPModels", "Requires", "ReverseDiff", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings"]
@@ -1087,11 +1087,23 @@ git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
+[[deps.HSL_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "4b34f6e368aa509b244847e6b0c9b370791bab09"
+uuid = "017b0a0e-03f4-516a-9b91-836bbd1904dd"
+version = "4.0.4+0"
+
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll"]
 git-tree-sha1 = "f923f9a774fcf3f5cb761bfa43aeadd689714813"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "8.5.1+0"
+
+[[deps.HiGHS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Zlib_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "50ed12dc8c37ebb8d2b759f21755259d8512f2bd"
+uuid = "8fd58aa0-07eb-5a78-9b36-339c94fd15ea"
+version = "1.14.0+0"
 
 [[deps.Hwloc_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "XML2_jll", "Xorg_libpciaccess_jll"]
@@ -2971,6 +2983,23 @@ version = "1.28.0"
     Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
     NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
     Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[deps.UnoSolver]]
+deps = ["LinearAlgebra", "OpenBLAS32_jll", "SolverCore", "Uno_jll"]
+git-tree-sha1 = "6a37f3063c1092270e056567cefbbe378014c11f"
+uuid = "1baa60ac-02f7-4b39-a7a8-2f4f58486b05"
+version = "0.3.0"
+weakdeps = ["MathOptInterface", "NLPModels"]
+
+    [deps.UnoSolver.extensions]
+    UnoSolverMathOptInterfaceExt = "MathOptInterface"
+    UnoSolverNLPModelsExt = "NLPModels"
+
+[[deps.Uno_jll]]
+deps = ["ASL_jll", "Artifacts", "CompilerSupportLibraries_jll", "HSL_jll", "HiGHS_jll", "JLLWrappers", "LLVMOpenMP_jll", "Libdl", "METIS_jll", "MUMPS_seq_jll", "SPRAL_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "3530444c365f78f2d84af6224e4fffbd9e115e49"
+uuid = "396d5378-14f1-5ab1-981d-48acd51740ed"
+version = "2.7.0+0"
 
 [[deps.UnsafeAtomics]]
 git-tree-sha1 = "0f30765c32d66d58e41f4cb5624d4fc8a82ec13b"
