@@ -1,7 +1,7 @@
-Manifest.toml
-**/target
+.vscode
 .devenv
 .direnv
-.vscode
+**/target
+Manifest.toml
 Cargo.lock
 *.svg

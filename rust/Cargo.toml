@@ -1,0 +1,12 @@
+[package]
+name = "cvx-playground"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cvxrust = "0.1.0"
+nalgebra = "0.34.2"
+plotters = "0.3.7"
+
+[patch.crates-io]
+cvxrust = { git = "https://github.com/cvxpy/cvxrust.git", branch = "main" }
